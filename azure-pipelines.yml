@@ -26,3 +26,51 @@ jobs:
 - template: .azure-pipelines/sampleDataValidator.yaml
 - template: .azure-pipelines/contentValidations.yaml
 - template: .azure-pipelines/callGithubWorkflow.yaml
+
+# -------------------------
+# DEPLOYMENT JOB STARTS HERE
+# -------------------------
+- job: Deploy_SAP_BTP_Solution
+  displayName: "Deploy SAP BTP Sentinel Solution"
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+
+  # Checkout the repository
+  - checkout: self
+    fetchDepth: 0
+
+  # Sparse checkout so only SAP BTP folder is downloaded
+  - script: |
+      echo "Enabling sparse checkout..."
+      git config core.sparseCheckout true
+
+      echo "Solutions/SAP BTP/" > .git/info/sparse-checkout
+
+      echo "Applying sparse checkout..."
+      git read-tree -mu HEAD
+
+      echo "Contents after sparse checkout:"
+      ls -R Solutions/"SAP BTP"
+    displayName: "Sparse checkout SAP BTP"
+
+  # Azure login + ARM deployment
+  - task: AzureCLI@2
+    displayName: "Deploy SAP BTP Solution to Microsoft Sentinel"
+    inputs:
+      azureSubscription: 'rivm-az-ivo-secmon-nprd'
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        RESOURCE_GROUP="rivm-az-ivo-secmon-nprd"
+        LOCATION="westeurope"
+        TEMPLATE="Solutions/SAP BTP/Solution/SAP_BTP.json"
+
+        echo "Deploying SAP BTP solution..."
+        az deployment group create \
+            --resource-group $RESOURCE_GROUP \
+            --template-file "$TEMPLATE" \
+            --mode Incremental
+
+        echo "Deployment complete."
