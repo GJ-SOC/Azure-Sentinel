@@ -58,7 +58,7 @@ jobs:
   - task: AzureCLI@2
     displayName: "Deploy SAP BTP Solution to Microsoft Sentinel"
     inputs:
-      azureSubscription: 'rivm-az-ivo-secmon-nprd'
+      azureSubscription: 'rivm-az-ivo-secmon-nprd-service-connection'
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
